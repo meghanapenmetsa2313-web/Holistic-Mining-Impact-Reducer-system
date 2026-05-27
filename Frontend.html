@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Holistic Mining Impact Reducer</title>
+    <style>
+        body { margin:0; font-family:Arial; background:#0f1117; color:white; }
+        .login-card { width:350px; margin:150px auto; padding:30px; background:#1a1d24; border-radius:12px; text-align:center; }
+        input, select, button { width:100%; padding:10px; margin:8px 0; background:#2c2f36; border:none; color:white; }
+        button { background:#00c853; font-weight:bold; cursor:pointer; }
+        button:hover { background:#00e676; }
+        header { background:#1a1d24; padding:20px; display:flex; justify-content:space-between; align-items:center; }
+        .top-panel { padding:20px; background:#16181d; display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; }
+        .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:15px; padding:20px; }
+        .card { background:#1a1d24; padding:20px; border-radius:12px; }
+        #map { height:350px; margin:20px; border-radius:10px; }
+        table { width:100%; border-collapse:collapse; margin-top:10px; }
+        th,td { border:1px solid white; padding:8px; text-align:center; }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="login-card">
+    <h1>Holistic Mining Impact Reducer</h1>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="loginError"></p>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none;">
+
+<header>
+    <h2>Mining Monitoring Dashboard</h2>
+    <span id="userRole"></span>
+    <button onclick="logout()">Logout</button>
+</header>
+
+<section class="top-panel">
+    <input type="text" id="locationSearch" placeholder="Search Mining Area or GPS">
+    <button onclick="searchLocation()">Search Location</button>
+
+    <input type="number" id="latInput" placeholder="Latitude">
+    <input type="number" id="lngInput" placeholder="Longitude">
+
+    <label><input type="checkbox" id="gpsToggle"> Auto-detect GPS</label>
+
+    <select id="methodSelect"></select>
+
+    <label><input type="checkbox" id="smallSite"> Small Mining Site</label>
+
+    <button onclick="analyzeSite()">Analyze Site</button>
+</section>
+
+<div id="map"></div>
+
+<section class="cards">
+<div class="card"><h3>📍 Location</h3><p id="siteName"></p><p id="coordinates"></p><p id="legalStatus"></p></div>
+<div class="card"><h3>🌫 Air Quality</h3><p id="airData"></p></div>
+<div class="card"><h3>💧 Water Quality</h3><p id="waterData"></p></div>
+<div class="card"><h3>🌍 Soil & Land</h3><p id="soilData"></p></div>
+<div class="card"><h3>📳 Vibration</h3><p id="vibrationData"></p></div>
+<div class="card"><h3>⚠ Risk Score</h3><p id="riskScore"></p></div>
+</section>
+
+<h3 style="padding-left:20px;">Mining Method Comparison</h3>
+<div id="methodTable"></div>
+
+<h3 style="padding-left:20px;">Graphs (Small Sites Only)</h3>
+<canvas id="envChart"></canvas>
+<canvas id="methodChart"></canvas>
+
+<h3 style="padding-left:20px;">💡 Recommendations</h3>
+<ul id="recommendations"></ul>
+
+<script>
+let map;
+let marker;
+
+const users = {
+    admin: { password:"admin123", role:"Admin" },
+    inspector: { password:"inspect123", role:"Inspector" }
+};
+
+const methods = [
+    {name:"RDX Blasting", pollution:"High", cost:"Medium", efficiency:90, safety:"Low", vibration:9},
+    {name:"Hydraulic Fragmentation", pollution:"Low", cost:"Low", efficiency:75, safety:"High", vibration:3},
+    {name:"Chemical Rock Breaking", pollution:"Medium", cost:"Medium", efficiency:70, safety:"Medium", vibration:4},
+    {name:"Plasma Fragmentation", pollution:"Low", cost:"High", efficiency:85, safety:"High", vibration:5},
+    {name:"Micro-Blast Technology", pollution:"Medium", cost:"Medium", efficiency:80, safety:"Medium", vibration:6},
+    {name:"Controlled Smart Detonation", pollution:"Medium", cost:"Medium", efficiency:88, safety:"High", vibration:5}
+];
+
+function login(){
+    let user=username.value;
+    let pass=password.value;
+    if(users[user] && users[user].password===pass){
+        loginPage.style.display="none";
+        dashboard.style.display="block";
+        userRole.innerText="Role: "+users[user].role;
+        initMap();
+        populateMethods();
+    }else{
+        loginError.innerText="Invalid Credentials!";
+    }
+}
+
+function logout(){ location.reload(); }
+
+function initMap(){
+    map = L.map('map').setView([20,78],5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+}
+
+function populateMethods(){
+    methods.forEach(m=>{
+        let option=document.createElement("option");
+        option.text=m.name;
+        methodSelect.add(option);
+    });
+}
+
+function searchLocation(){
+    let lat=20+Math.random();
+    let lng=78+Math.random();
+    latInput.value=lat.toFixed(4);
+    lngInput.value=lng.toFixed(4);
+}
+
+function analyzeSite(){
+    let lat=parseFloat(latInput.value);
+    let lng=parseFloat(lngInput.value);
+
+    let air=Math.floor(Math.random()*150);
+    let water=(Math.random()*3+5).toFixed(2);
+    let soil=Math.floor(Math.random()*10);
+    let vibration=Math.floor(Math.random()*11);
+
+    let legal=Math.random()>0.5;
+
+    let risk=0;
+    if(!legal) risk+=5;
+    if(air>50) risk+=2;
+    if(water<6||water>9) risk+=2;
+    if(soil>5) risk+=2;
+    if(vibration>7) risk+=1;
+
+    let riskStatus=risk<=3?"🟢 Low":risk<=7?"🟠 Medium":"🔴 High";
+
+    siteName.innerText="Mining Site Analysis";
+    coordinates.innerText=`Lat: ${lat}, Lng: ${lng}`;
+    legalStatus.innerText=legal?"Legal ✅":"Illegal ❌";
+    airData.innerText=`PM2.5: ${air}`;
+    waterData.innerText=`pH: ${water}`;
+    soilData.innerText=`Soil Index: ${soil}`;
+    vibrationData.innerText=`Vibration (0-10): ${vibration}`;
+    riskScore.innerText=`${risk}/15 → ${riskStatus}`;
+
+    if(marker) map.removeLayer(marker);
+    marker=L.marker([lat,lng],{color:legal?"green":"red"}).addTo(map);
+    map.setView([lat,lng],10);
+
+    generateTable();
+    generateRecommendations(legal,air,water,soil,vibration);
+
+    if(smallSite.checked){ generateCharts(air,water,soil,vibration); }
+}
+
+function generateTable(){
+    let table="<table><tr><th>Method</th><th>Pollution</th><th>Cost</th><th>Efficiency</th><th>Safety</th><th>Vibration</th></tr>";
+    methods.forEach(m=>{
+        table+=`<tr><td>${m.name}</td><td>${m.pollution}</td><td>${m.cost}</td><td>${m.efficiency}%</td><td>${m.safety}</td><td>${m.vibration}</td></tr>`;
+    });
+    table+="</table>";
+    methodTable.innerHTML=table;
+}
+
+function generateRecommendations(legal,air,water,soil,vibration){
+    recommendations.innerHTML="";
+    if(air>50) recommendations.innerHTML+="<li>Activate dust suppression</li>";
+    if(water<6) recommendations.innerHTML+="<li>Water neutralization required</li>";
+    if(soil>5) recommendations.innerHTML+="<li>Soil stabilization treatment</li>";
+    if(vibration>7) recommendations.innerHTML+="<li>Reduce vibration impact</li>";
+    if(!legal) recommendations.innerHTML+="<li>Investigate unauthorized mining</li>";
+}
+
+function generateCharts(air,water,soil,vibration){
+    new Chart(envChart,{
+        type:'bar',
+        data:{ labels:["Air","Water","Soil","Vibration"], datasets:[{ data:[air,water,soil,vibration], backgroundColor:["red","blue","yellow","orange"] }] }
+    });
+
+    new Chart(methodChart,{
+        type:'bar',
+        data:{ labels:methods.map(m=>m.name), datasets:[{ label:"Efficiency %", data:methods.map(m=>m.efficiency), backgroundColor:"#00c853" }] }
+    });
+}
+</script>
+</body>
+</html>
