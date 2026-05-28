@@ -1,0 +1,2 @@
+Developed a Holistic Mining Impact Reducer system to monitor mining sites in real time using environmental indicators like air quality, water pH, soil index, and vibration, and compute risk levels with actionable recommendations for reducing environmental damage.
+Built an interactive, role-based platform (Admin/Inspector) with maps, charts, and mining method comparison to support data-driven decision-making, ensuring scalable, modular design with strong focus on sustainability and real-world applicability
